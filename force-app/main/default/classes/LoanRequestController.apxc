@@ -1,4 +1,28 @@
+/**
+ * Controller class for managing loan request operations.
+ * 
+ * This class provides methods for retrieving loan details from the Loan_Request__c object.
+ * It is marked as "with sharing" to enforce sharing rules for the current user context.
+ * 
+ * <p>
+ * The main functionality includes:
+ * - Retrieving loan details for a specific loan ID.
+ * </p>
+ *
+ * @author Shiri Rave
+ * @date 18/05/25
+ */
 public with sharing class LoanRequestController {
+
+    /**
+     * Retrieves the details of a loan request by its ID.
+     * 
+     * This method is annotated with @AuraEnabled to allow it to be called from Lightning components.
+     * It is cacheable, meaning that the results can be cached for better performance.
+     *
+     * @param loanId The ID of the loan request to retrieve.
+     * @return The Loan_Request__c object containing the loan details, or null if not found.
+     */
     @AuraEnabled(cacheable=true)
     public static Loan_Request__c getLoanDetails(String loanId) {
         // Query the specific loan request by ID
