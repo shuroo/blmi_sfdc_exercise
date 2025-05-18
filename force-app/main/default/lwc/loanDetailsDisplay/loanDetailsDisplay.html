@@ -1,0 +1,21 @@
+<template>
+    <lightning-card title="Loan Details">
+        <lightning-input label="Enter Loan Request ID" value={loanId} onchange={handleInputChange}></lightning-input>
+        <lightning-button label="Fetch Details" onclick={loadLoanDetails}></lightning-button>
+        
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+        </template>
+        
+        <template if:false={isLoading}>
+            <template if:true={loanData}>
+                <p><strong>Customer Name:</strong> {loanData.Customer__c}</p>
+                <p><strong>Loan Amount:</strong> {loanData.LoanAmount__c}</p>
+                <p><strong>Loan Status:</strong> {loanData.LoanStatus__c}</p>
+            </template>
+            <template if:true={error}>
+                <p class="error">{error}</p>
+            </template>
+        </template>
+    </lightning-card>
+</template>

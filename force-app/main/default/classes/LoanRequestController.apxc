@@ -1,0 +1,7 @@
+public with sharing class LoanRequestController {
+    @AuraEnabled(cacheable=true)
+    public static Loan_Request__c getLoanDetails(String loanId) {
+        // Query the specific loan request by ID
+        return [SELECT Id, Customer__c, LoanAmount__c, LoanStatus__c FROM Loan_Request__c WHERE Id = :loanId LIMIT 1];
+    }
+}

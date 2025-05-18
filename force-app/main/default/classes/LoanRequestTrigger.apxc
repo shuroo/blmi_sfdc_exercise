@@ -1,0 +1,27 @@
+/**
+ * Trigger that handles operations on Loan_Request__c records.
+ * 
+ * This trigger is invoked before inserting and updating Loan_Request__c records.
+ * It calls helper methods to manage the business logic for loan inserts and updates.
+ * 
+ * <p>
+ * The trigger performs the following actions:
+ * - On insert, it calls the LoanRequestHelper.handleLoanInserts method to handle new loan requests.
+ * - On update, it calls the LoanRequestHelper.handleLoanUpdates method to manage updates to existing loan requests.
+ * </p>
+ * 
+ * @author Shiri Rave
+ * @date 18/05/25
+ */
+
+trigger LoanRequestTrigger on Loan_Request__c (before insert, before update) {
+ 
+    if (Trigger.isInsert) {
+        LoanRequestHelper.handleLoanInserts(Trigger.new);
+    }
+    
+    // Call the handleLoanUpdates method for before update operations
+    if (Trigger.isUpdate) {
+        LoanRequestHelper.handleLoanUpdates(Trigger.new, Trigger.oldMap);
+    }
+}

@@ -1,0 +1,154 @@
+
+    /**
+ * This class contains helper methods for handling loan request operations.
+ * It includes functionality for adding tasks for high loan amounts,
+ * recording loan history when approved, and generating decline reports.
+ * 
+ * <p>
+ * The primary functionality includes:
+ * - Adding a task for the bank manager if the loan amount exceeds a certain threshold.
+ * - Adding a loan history record when a loan request is approved.
+ * - Creating a decline report when a loan request is rejected.
+ * </p>
+ * 
+ * @author Shiri Rave
+ * @date 18/05/25
+ */
+public class LoanRequestHelper { 
+
+    /**
+     * Adds a task for the bank manager when a loan amount exceeds $250,000.
+     *
+     * @param loanRequest The loan request object containing the details of the loan.
+     * @param tasksToInsert The list of tasks to which the new task will be added.
+     */
+    private static void addTask(Loan_Request__c loanRequest, List<Task> tasksToInsert) {
+        Task newTask = new Task(
+            WhatId = loanRequest.Id,
+            OwnerId = loanRequest.OwnerId,
+            Subject = 'High Loan Amount Review',
+            Description = 'Customer: ' + loanRequest.Customer__c + 
+                          ', Amount: ' + loanRequest.LoanAmount__c + 
+                          ', Date: ' + Date.today()
+        );
+        tasksToInsert.add(newTask);
+    }
+
+    /**
+     * Adds a history record when a loan request is approved.
+     *
+     * @param loanRequest The loan request object that was approved.
+     * @param historyRecords The list of loan history records to which the new record will be added.
+     */
+    private static void addHistoryRecordWhenApproved(
+            Loan_Request__c loanRequest, List<LoanHistory__c> historyRecords) { 
+        LoanHistory__c historyRecord = new LoanHistory__c(
+            Customer__c = loanRequest.Customer__c,
+            LoanAmount__c = loanRequest.LoanAmount__c,
+            Date__c = Date.today(),
+            LoanStatus__c = loanRequest.LoanStatus__c
+        );
+        historyRecords.add(historyRecord);
+    }
+
+    /**
+     * Creates a decline report when a loan request is rejected.
+     *
+     * @param loanRequest The loan request object that was rejected.
+     * @param reportsToInsert The list of declined loan reports to which the new report will be added.
+     */
+    private static void addDeclineReportWhenRejected(
+            Loan_Request__c loanRequest, List<DeclinedLoanReport__c> reportsToInsert) { 
+        DeclinedLoanReport__c report = new DeclinedLoanReport__c(
+            Loan_Request__c = loanRequest.Id,
+            RejectionReason__c = 'Insufficient Credit', 
+            Customer__c = loanRequest.Customer__c,
+            LoanAmount__c = loanRequest.LoanAmount__c,
+            Date__c = Date.today()
+        );
+        reportsToInsert.add(report);
+    }
+
+    /**
+     * Optionally adds tasks for high loan amounts.
+     *
+     * @param loanRequests The list of loan requests to evaluate for high loan amounts.
+     */
+    public static void optionallyAddTasksHighLoans(List<Loan_Request__c> loanRequests) {
+        List<Task> tasksToInsert = new List<Task>(); 
+
+        for (Loan_Request__c loanRequest : loanRequests) {
+            // Handle high loan amount tasks
+            if (loanRequest.LoanAmount__c > 250000) {
+                Task newTask = new Task(
+                    WhatId = loanRequest.Id,
+                    OwnerId = loanRequest.OwnerId,
+                    Subject = 'High Loan Amount Review',
+                    Description = 'Customer: ' + loanRequest.Customer__c + 
+                                  ', Amount: ' + loanRequest.LoanAmount__c + 
+                                  ', Date: ' + Date.today()
+                );
+                tasksToInsert.add(newTask);
+            } 
+        }
+        
+        if (!tasksToInsert.isEmpty()) {
+            insert tasksToInsert;
+        }
+    }
+
+    /**
+     * Handles loan inserts by calling methods to add tasks for high loans.
+     *
+     * @param loanRequests The list of loan requests being inserted.
+     */
+    public static void handleLoanInserts(List<Loan_Request__c> loanRequests) {
+        optionallyAddTasksHighLoans(loanRequests);
+    }
+
+    /**
+     * Handles loan updates and processes tasks, history records, and decline reports as necessary.
+     *
+     * @param loanRequests The list of loan requests being updated.
+     * @param oldLoanRequestsMap A map of the old loan requests before the update.
+     */
+    public static void handleLoanUpdates(List<Loan_Request__c> loanRequests, Map<Id, Loan_Request__c> oldLoanRequestsMap) {
+      
+   			optionallyAddTasksHighLoans(loanRequests);
+        
+            List<DeclinedLoanReport__c> declinedReportsToAdd = new List<DeclinedLoanReport__c>();
+        	List<LoanHistory__c> historyRecordsToAdd = new List<LoanHistory__c>();
+        
+         for (Loan_Request__c loanRequest : loanRequests) {
+                        
+            // Check if LoanStatus changed to 'Approved' - On Update
+             if (loanRequest.LoanStatus__c == 'Approved' && 
+                oldLoanRequestsMap.get(loanRequest.Id).LoanStatus__c != 'Approved') {
+                    addHistoryRecordWhenApproved(loanRequest,historyRecordsToAdd);
+               
+            }
+        
+         // Handle rejected loans - On Update only
+             else if (loanRequest.LoanStatus__c == 'Rejected'){ // some how this term doesn't work, removing it though it's better to have it.. ->  && oldLoanRequestsMap.get(loanRequest.Id).LoanStatus__c == 'Pending') {
+              addDeclineReportWhenRejected(loanRequest,declinedReportsToAdd);
+            }
+             
+             
+            // Check if LoanStatus changed to 'Approved'
+            if (loanRequest.LoanStatus__c == 'Approved' && 
+                oldLoanRequestsMap.get(loanRequest.Id).LoanStatus__c != 'Approved') {
+                    
+               addHistoryRecordWhenApproved(loanRequest,historyRecordsToAdd);
+            }
+      
+
+        // Bulk insert operations
+        if (!declinedReportsToAdd.isEmpty()) {
+            insert declinedReportsToAdd;
+        }
+        if (!historyRecordsToAdd.isEmpty()) {
+            insert historyRecordsToAdd;
+        } 
+         }
+    }
+}
