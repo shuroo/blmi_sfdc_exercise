@@ -92,6 +92,8 @@ private class LoanRequestHelperTest {
         System.assertEquals(loanRequest.LoanAmount__c, reports[0].LoanAmount__c, 'The report should contain the correct loan amount.');
         System.assertEquals(Date.today(), reports[0].Date__c, 'The report should contain the current date.');
     }
+    
+    
 
     @isTest
     /**
@@ -121,7 +123,7 @@ private class LoanRequestHelperTest {
         List<LoanHistory__c> histories = [SELECT Id, Customer__c, LoanAmount__c, Date__c, LoanStatus__c FROM LoanHistory__c WHERE Customer__c = :loanRequest.Customer__c];
         
         // Uncomment the following line to assert that at least one history record was created
-        // System.assertEquals(1, histories.size(), 'A history record should have been created for approved loan.');
+        System.assertEquals(1, histories.size(), 'A history record should have been created for approved loan.');
         System.assertEquals(loanRequest.Customer__c, histories[0].Customer__c, 'The history record should contain the correct customer.');
         System.assertEquals(loanRequest.LoanAmount__c, histories[0].LoanAmount__c, 'The history record should contain the correct loan amount.');
     }
