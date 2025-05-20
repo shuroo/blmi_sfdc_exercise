@@ -1,7 +1,7 @@
 import { LightningElement, track } from 'lwc';
 import getLoanDetails from '@salesforce/apex/LoanRequestController.getLoanDetails';
 
-export default class LoanDetailsDisplay extends LightningElement {
+export default class LoanDetailsD extends LightningElement {
     @track loanId = ''; // To hold the input loan ID
     @track loanData; // To hold the loan details
     @track error; // To hold any errors

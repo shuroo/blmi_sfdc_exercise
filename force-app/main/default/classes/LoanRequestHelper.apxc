@@ -1,131 +1,93 @@
-@isTest
-/**
- * Test class for LoanRequestHelper class.
- * 
- * This class contains unit tests that validate the functionality of the LoanRequestHelper,
- * including task creation for high loan amounts, report generation for rejected loans,
- * and history record creation for approved loans.
- * 
- * <p>
- * The test methods include:
- * - testHighLoanAmountTaskCreation: Verifies task creation when loan amount exceeds the threshold.
- * - testRejectedLoanReportCreation: Verifies report creation when a loan is rejected.
- * - testLoanHistoryCreation: Verifies history record creation when a loan is approved.
- * </p>
- * 
- * @author Shiri Rave
- * @date 18/05/25
- */
-private class LoanRequestHelperTest {
+public class LoanRequestHelper {
+    public static void handleLoanUpdates(List<Loan_Request__c> loanRequests, Map<Id, Loan_Request__c> oldLoanRequestsMap) {
+        List<Task> tasksToInsert = new List<Task>();
+        List<DeclinedLoanReport__c> reportsToInsert = new List<DeclinedLoanReport__c>();
+        List<LoanHistory__c> historyToInsert = new List<LoanHistory__c>();
 
-    /**
-     * Setup method to create test data for the test class.
-     * 
-     * This method is annotated with @testSetup and runs once for the test class,
-     * creating a Customer and a Loan Request record for use in the test methods.
-     */
-    @testSetup
-    static void setup() {
-        // Create test data
-        Customer testCustomer = new Customer(Name = 'Test Customer');
-        insert testCustomer; // Insert the Customer record
+        for (Loan_Request__c loanRequest : loanRequests) {
+            // Handle high loan amount tasks
+            if (loanRequest.LoanAmount__c > 250000) {
+                Task newTask = new Task(
+                    WhatId = loanRequest.Id,
+                    OwnerId = loanRequest.OwnerId,
+                    Subject = 'High Loan Amount Review',
+                    Description = 'Customer: ' + loanRequest.Customer__c + 
+                                  ', Amount: ' + loanRequest.LoanAmount__c + 
+                                  ', Date: ' + Date.today()
+                );
+                tasksToInsert.add(newTask);
+            } 
+            // Handle rejected loans
+            else if (loanRequest.LoanStatus__c == 'Rejected') {
+                DeclinedLoanReport__c report = new DeclinedLoanReport__c(
+                   // Loan_Request__c = loanRequest.Id,
+                    RejectionReason__c = 'Insufficient Credit',
+                    Customer__c = loanRequest.Customer__c,
+                    LoanAmount__c = loanRequest.LoanAmount__c,
+                    Date__c = Date.today()
+                );
+                reportsToInsert.add(report);
+            }
+            // Check if LoanStatus changed to 'Approved'
+            if (loanRequest.LoanStatus__c == 'Approved' && 
+                oldLoanRequestsMap.get(loanRequest.Id).LoanStatus__c != 'Approved') {
+                LoanHistory__c historyRecord = new LoanHistory__c(
+                    Customer__c = loanRequest.Customer__c,
+                    LoanAmount__c = loanRequest.LoanAmount__c,
+                    Date__c = Date.today(),
+                    LoanStatus__c = loanRequest.LoanStatus__c
+                );
+                historyToInsert.add(historyRecord);
+            }
+        }
 
-        Loan_Request__c loanRequest = new Loan_Request__c(
-            Customer__c = testCustomer.Id,
-            LoanAmount__c = 100000,
-            LoanStatus__c = 'Pending',
-            Date__c = Date.today() 
-        );
-        insert loanRequest;
-    }
-
-    /**
-     * Tests the creation of a task when a loan amount exceeds $250,000.
-     * 
-     * This test modifies the loan amount of an existing Loan Request
-     * and verifies that a task is created for the bank manager.
-     */
-    @isTest
-    static void testHighLoanAmountTaskCreation() {
-        // Retrieve the test data
-        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
-
-        // Modify the loan amount to trigger task creation
-        loanRequest.LoanAmount__c = 250001;
-
-        Test.startTest();
-        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequest});
-        Test.stopTest();
-
-        // Verify that a task was created
-        List<Task> tasks = [SELECT Id, WhatId, OwnerId, Subject, Description FROM Task LIMIT 1];
-        System.assertEquals(tasks[0].WhatId, loanRequest.Id);
-        System.assertEquals(1, tasks.size(), 'A task should have been created for high loan amount.');
-        System.assertEquals('High Loan Amount Review', tasks[0].Subject, 'The task subject should be correct.');
-        System.assert(tasks[0].Description.contains('Customer: ' + loanRequest.Customer__c), 'The task description should contain the correct customer.');
-        System.assert(tasks[0].Description.contains('Amount: ' + loanRequest.LoanAmount__c), 'The task description should contain the correct loan amount.');
-        System.assert(tasks[0].Description.contains('Date: ' + Date.today()), 'The task description should contain the current date.');
-    }  
-
-    /**
-     * Tests the creation of a report when a loan is rejected.
-     * 
-     * This test modifies the loan status of an existing Loan Request
-     * and verifies that a report is created for the rejected loan.
-     */
-    @isTest
-    static void testRejectedLoanReportCreation() {
-        // Retrieve the test data
-        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanAmount__c FROM Loan_Request__c LIMIT 1];
-
-        // Modify the loan status to trigger report creation
-        loanRequest.LoanStatus__c = 'Rejected'; 
-
-        Test.startTest();
-        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequest});
-        Test.stopTest();
-
-        // Verify that a report was created
-        List<DeclinedLoanReport__c> reports = [SELECT Id, RejectionReason__c, Customer__c, LoanAmount__c, Date__c FROM DeclinedLoanReport__c WHERE Customer__c = :loanRequest.Customer__c];
-        System.assertEquals(1, reports.size(), 'A report should have been created for rejected loan.');
-        System.assertEquals('Insufficient Credit', reports[0].RejectionReason__c, 'The report should contain the correct rejection reason.');
-        System.assertEquals(loanRequest.LoanAmount__c, reports[0].LoanAmount__c, 'The report should contain the correct loan amount.');
-        System.assertEquals(Date.today(), reports[0].Date__c, 'The report should contain the current date.');
+        // Bulk insert operations
+        if (!tasksToInsert.isEmpty()) {
+            insert tasksToInsert;    
+        }
+        if (!reportsToInsert.isEmpty()) {
+            insert reportsToInsert;
+        }
+        if (!historyToInsert.isEmpty()) {
+            insert historyToInsert;
+        } 
     }
     
     
-
-    @isTest
     /**
-    * Tests the creation of a loan history record when a loan request is approved.
-    * 
-    * This test method retrieves an existing Loan Request record, modifies
-    * its status to 'Approved', and verifies that a corresponding history
-    * record is created in the LoanHistory__c object.
-    * 
-    * The test includes:
-    * - Cloning the original loan request to maintain its state before the update.
-    * - Asserting that a history record was created with the correct customer and loan amount.
-    */
-    static void testLoanHistoryCreation() {
-        // Retrieve the test data
-        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanAmount__c, LoanStatus__c FROM Loan_Request__c LIMIT 1];
-        Loan_Request__c oldLoanRequest = loanRequest.clone(false, false, false, false);
+     * Optionally adds tasks for high loan amounts.
+     *
+     * @param loanRequests The list of loan requests to evaluate for high loan amounts.
+     */
+    public static void optionallyAddTasksHighLoans(List<Loan_Request__c> loanRequests) {
+        List<Task> tasksToInsert = new List<Task>(); 
 
-        // Modify the loan status to trigger history creation
-        loanRequest.LoanStatus__c = 'Approved';
-
-        Test.startTest();
-        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => oldLoanRequest});
-        Test.stopTest();
-
-        // Verify that a history record was created
-        List<LoanHistory__c> histories = [SELECT Id, Customer__c, LoanAmount__c, Date__c, LoanStatus__c FROM LoanHistory__c WHERE Customer__c = :loanRequest.Customer__c];
+        for (Loan_Request__c loanRequest : loanRequests) {
+            // Handle high loan amount tasks
+            if (loanRequest.LoanAmount__c > 250000) {
+                Task newTask = new Task(
+                    WhatId = loanRequest.Id,
+                    OwnerId = loanRequest.OwnerId,
+                    Subject = 'High Loan Amount Review',
+                    Description = 'Customer: ' + loanRequest.Customer__c + 
+                                  ', Amount: ' + loanRequest.LoanAmount__c + 
+                                  ', Date: ' + Date.today()
+                );
+                tasksToInsert.add(newTask);
+            } 
+        }
         
-        // Uncomment the following line to assert that at least one history record was created
-        System.assertEquals(1, histories.size(), 'A history record should have been created for approved loan.');
-        System.assertEquals(loanRequest.Customer__c, histories[0].Customer__c, 'The history record should contain the correct customer.');
-        System.assertEquals(loanRequest.LoanAmount__c, histories[0].LoanAmount__c, 'The history record should contain the correct loan amount.');
+        if (!tasksToInsert.isEmpty()) {
+            insert tasksToInsert;
+        }
     }
 
+    /**
+     * Handles loan inserts by calling methods to add tasks for high loans.
+     *
+     * @param loanRequests The list of loan requests being inserted.
+     */
+    public static void handleLoanInserts(List<Loan_Request__c> loanRequests) {
+        optionallyAddTasksHighLoans(loanRequests);
+    }
 }

@@ -1,0 +1,23 @@
+<template>
+    <lightning-card title="Loan Requests" icon-name="custom:custom63">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+        </template>
+        
+        <template if:true={loanRequests}>
+            <lightning-datatable
+                key-field="Id"
+                data={loanRequests}
+                columns={columns}
+                hide-checkbox-column="true"
+                sorted-by={sortedBy}
+                sorted-direction={sortedDirection}
+                onheaderaction={handleSort}
+            ></lightning-datatable>
+        </template>
+        
+        <template if:true={error}>
+            <p class="error">{error}</p>
+        </template>
+    </lightning-card>
+</template>
