@@ -9,7 +9,7 @@
  * - Retrieving loan details for a specific loan ID.
  * </p>
  *
- * @author Shiri Rave
+ * @author Shiri Rave   
  * @date 18/05/25
  */
 public with sharing class LoanRequestController {
@@ -28,15 +28,9 @@ public with sharing class LoanRequestController {
         // Query the specific loan request by ID
         return [SELECT Id, Customer__c, LoanAmount__c, LoanStatus__c FROM Loan_Request__c WHERE Id = :loanId LIMIT 1];
     }
-    
-    @AuraEnabled(cacheable=true)
-    public static Loan_Request__c getLoanRequests() {
-        
-        return [SELECT Id, Customer__c, LoanAmount__c, LoanStatus__c FROM Loan_Request__c ];
-    }
 
     @AuraEnabled
-    public static Loan_Request__c saveLoanRequest(String customerName, Decimal loanAmount, String loanStatus) {
+    public static Loan_Request__c saveLoanRequest(String customerName, Decimal loanAmount, String loanStatus, Date currentDate) {
         // Create a new instance of the Loan_Request__c object
         Loan_Request__c newLoanRequest = new Loan_Request__c();
         
@@ -58,14 +52,13 @@ public with sharing class LoanRequestController {
 
    
         // Set the fields with the incoming parameters
-        newLoanRequest.Customer__c = customer.Id; // Assuming Customer__c is the field name
-        newLoanRequest.LoanAmount__c = loanAmount; // Assuming LoanAmount__c is the field name
-        newLoanRequest.LoanStatus__c = loanStatus; // Assuming LoanStatus__c is the field name
-         
-        // Insert the new loan request record
+        newLoanRequest.Customer__c = customer.Id;  
+        newLoanRequest.LoanAmount__c = loanAmount;  
+        newLoanRequest.LoanStatus__c = loanStatus; 
+        newLoanRequest.Date__c =  currentDate;
+          
         insert newLoanRequest;
-        
-        // Return the created loan request record
+         
         return newLoanRequest;
     }
 }

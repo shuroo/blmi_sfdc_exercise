@@ -1,0 +1,72 @@
+@isTest
+/**
+ * Test class for LoanRequestController class.
+ * 
+ * This class contains unit tests that validate the functionality of the LoanRequestController,
+ * Used for the lwc connesponding component
+ * 
+ * <p>
+ * The test methods include:
+ * - testGetLoanDetails:  
+ * - testSaveLoanRequest:  
+ * </p>
+ * 
+ * @author Shiri Rave
+ * @date 23/05/25
+ */
+public class LoanRequestControllerTest {
+
+     @testSetup
+    static void setup() {
+   		Customer testCustomer = new Customer(Name = 'Test Customer');
+   		insert testCustomer; // Insert the Customer record
+    
+    }
+    
+     /* 
+     * Test method for getLoanDetails
+     */
+    @isTest
+    static void testGetLoanDetails() {
+        
+       Customer testCustomer = [SELECT Id FROM Customer LIMIT 1];
+
+        // Setup test data
+        Loan_Request__c testLoan = new Loan_Request__c(
+            Customer__c = testCustomer.ID,
+            LoanAmount__c = 5000,
+            LoanStatus__c = 'Pending',
+            Date__c = Date.today()
+        );
+        insert testLoan;
+
+        // Test method
+        Loan_Request__c retrievedLoan = LoanRequestController.getLoanDetails(testLoan.Id);
+        
+        // Verify results
+        System.assertNotEquals(null, retrievedLoan, 'Loan request should be retrieved.');
+        System.assertEquals(testLoan.Id, retrievedLoan.Id, 'Loan ID should match.');
+        System.assertEquals(testLoan.LoanAmount__c, retrievedLoan.LoanAmount__c, 'Loan Amount should match.');
+    }
+
+    
+     /* 
+     * Test method for saveLoanRequest
+     */
+    @isTest
+    static void testSaveLoanRequest() {
+        // Test data
+        String testCustomerName = 'New Customer';
+        Decimal testLoanAmount = 3000;
+        String testLoanStatus = 'Pending';
+        Date currentDate = Date.today();
+
+        // Test method
+        Loan_Request__c savedLoanRequest = LoanRequestController.saveLoanRequest(testCustomerName, testLoanAmount, testLoanStatus, currentDate);
+        
+        // Verify results
+        System.assertNotEquals(null, savedLoanRequest, 'Loan request should be created.');
+        System.assertEquals(testLoanAmount, savedLoanRequest.LoanAmount__c, 'Loan Amount should match.');
+        System.assertEquals(testLoanStatus, savedLoanRequest.LoanStatus__c, 'Loan Status should match.');
+    }
+}

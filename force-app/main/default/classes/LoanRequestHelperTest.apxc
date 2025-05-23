@@ -4,12 +4,14 @@
  * 
  * This class contains unit tests that validate the functionality of the LoanRequestHelper,
  * including task creation for high loan amounts, report generation for rejected loans,
- * and history record creation for approved loans.
+ * history record creation for approved loans and more..
  * 
  * <p>
  * The test methods include:
- * - testHighLoanAmountTaskCreation: Verifies task creation when loan amount exceeds the threshold.
- * - testRejectedLoanReportCreation: Verifies report creation when a loan is rejected.
+ * - testHighLoanAmountTaskCreationOnInsert: Verifies task creation when loan amount exceeds the threshold.
+ * - testHighLoanAmountTaskCreationOnUpdate: Like the above, for Update case;
+ * - testRejectedLoanReportCreationOnInsert: Verifies report creation when a loan is rejected
+ * - testRejectedLoanReportCreationOnUpdate: Like the above, for Update case;
  * - testLoanHistoryCreation: Verifies history record creation when a loan is approved.
  * </p>
  * 
@@ -38,15 +40,66 @@ private class LoanRequestHelperTest {
         );
         insert loanRequest;
     }
+    
+     /**
+     * ON Insert: Test the creation of a task when a loan amount exceeds $250,000.
+     * 
+     * This test modifies the loan amount of an existing Loan Request
+     * and verifies that a task is created for the bank manager.
+     */
+        @isTest
+    static void testHighLoanAmountTaskCreationOnInsert() {
+        // Retrieve the test data
+        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
+
+        // Modify the loan amount to trigger task creation
+        loanRequest.LoanAmount__c = 250001;
+
+        Test.startTest();
+        LoanRequestHelper.handleLoanInserts(new List<Loan_Request__c>{loanRequest});
+        Test.stopTest();
+
+        // Verify that a task was created
+        List<Task> tasks = [SELECT Id, WhatId, OwnerId, Subject, Description FROM Task LIMIT 1];
+        System.assertEquals(tasks[0].WhatId, loanRequest.Id);
+        System.assertEquals(1, tasks.size(), 'A task should have been created for high loan amount.');
+        System.assertEquals('High Loan Amount Review', tasks[0].Subject, 'The task subject should be correct.');
+        System.assert(tasks[0].Description.contains('Customer: ' + loanRequest.Customer__c), 'The task description should contain the correct customer.');
+        System.assert(tasks[0].Description.contains('Amount: ' + loanRequest.LoanAmount__c), 'The task description should contain the correct loan amount.');
+        System.assert(tasks[0].Description.contains('Date: ' + Date.today()), 'The task description should contain the current date.');
+    }  
+
+     /**
+     * ON Insert: Test the creation of a task when a loan amount is under $250,000.
+     * 
+     * This test DOES NOT modify the loan amount of an existing Loan Request
+     * and verifies that a task is NOT created for the bank manager.
+     */
+     @isTest
+    static void testLowLoanAmountNotCreatedOnInsert() {
+        // Retrieve the test data
+        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
+
+        // Modify the loan amount to trigger task creation
+        loanRequest.LoanAmount__c = 24900;
+
+        Test.startTest();
+        LoanRequestHelper.handleLoanInserts(new List<Loan_Request__c>{loanRequest});
+        Test.stopTest();
+
+        // Verify that a task was created
+        List<Task> tasks = [SELECT Id, WhatId, OwnerId, Subject, Description FROM Task LIMIT 1];
+        System.assertEquals(0, tasks.size(), 'A task should NOT be created for low loan amount.');
+    } 
 
     /**
-     * Tests the creation of a task when a loan amount exceeds $250,000.
+     * ON Update: Test the creation of a task when a loan amount exceeds $250,000.
      * 
      * This test modifies the loan amount of an existing Loan Request
      * and verifies that a task is created for the bank manager.
      */
     @isTest
-    static void testHighLoanAmountTaskCreation() {
+    static void testHighLoanAmountTaskCreationOnUpdate() {
         // Retrieve the test data
         Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
 
@@ -67,6 +120,28 @@ private class LoanRequestHelperTest {
         System.assert(tasks[0].Description.contains('Date: ' + Date.today()), 'The task description should contain the current date.');
     }  
 
+    /**
+     * ON Update: Test the creation of a task when a loan amount is under $250,000.
+     * 
+     * This test DOES NOT modify the loan amount of an existing Loan Request
+     * and verifies that a task is NOT created for the bank manager.
+     */
+     @isTest
+    static void testLowLoanAmountNotCreatedOnUpdate() {
+        // Retrieve the test data
+        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
+
+        // Modify the loan amount to trigger task creation
+        loanRequest.LoanAmount__c = 24900;
+
+        Test.startTest();
+        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequest});
+        Test.stopTest();
+
+        // Verify that a task was created
+        List<Task> tasks = [SELECT Id, WhatId, OwnerId, Subject, Description FROM Task LIMIT 1];
+        System.assertEquals(0, tasks.size(), 'A task should NOT be created for low loan amount.');
+    }  
     /**
      * Tests the creation of a report when a loan is rejected.
      * 
