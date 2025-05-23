@@ -1,6 +1,7 @@
-import { LightningElement, track, wire } from 'lwc';
-import getLoanRequests from '@salesforce/apex/LoanRequestController.getLoanRequests'; // Apex method to get loan requests
 
+import getLoanRequests from '@salesforce/apex/LoanRequestController.getLoanRequests'; // Apex method to get loan requests
+import { LightningElement, track, wire } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation'; // For navigation
 export default class LoanList extends LightningElement {
     @track loanRequests; // To hold the list of loan requests
     @track error; // To hold any errors

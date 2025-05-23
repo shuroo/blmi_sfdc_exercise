@@ -48,6 +48,32 @@ public class LoanRequestControllerTest {
         System.assertEquals(testLoan.Id, retrievedLoan.Id, 'Loan ID should match.');
         System.assertEquals(testLoan.LoanAmount__c, retrievedLoan.LoanAmount__c, 'Loan Amount should match.');
     }
+    
+         /* 
+     * Test method for getLoanRequests
+     */
+    @isTest
+    static void testGetLoanRequests() {
+        
+       Customer testCustomer = [SELECT Id FROM Customer LIMIT 1];
+
+        // Setup test data
+        Loan_Request__c testLoan = new Loan_Request__c(
+            Customer__c = testCustomer.ID,
+            LoanAmount__c = 5000,
+            LoanStatus__c = 'Pending',
+            Date__c = Date.today()
+        );
+        insert testLoan;
+
+        // Test method
+        List<Loan_Request__c> retrievedLoans = LoanRequestController.getLoanRequests();
+        
+        // Verify results
+        System.assertEquals(1, retrievedLoans.size(), 'Loan request should be retrieved.');
+        System.assertEquals(testLoan.Id, retrievedLoans[0].Id, 'Loan ID should match.');
+        System.assertEquals(testLoan.LoanAmount__c, retrievedLoans[0].LoanAmount__c, 'Loan Amount should match.');
+    }
 
     
      /* 

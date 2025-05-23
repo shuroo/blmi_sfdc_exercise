@@ -29,6 +29,12 @@ public with sharing class LoanRequestController {
         return [SELECT Id, Customer__c, LoanAmount__c, LoanStatus__c FROM Loan_Request__c WHERE Id = :loanId LIMIT 1];
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<Loan_Request__c>  getLoanRequests() {
+        // Query the specific loan request by ID
+        return [SELECT Id, Customer__c, LoanAmount__c, LoanStatus__c FROM Loan_Request__c ORDER BY Date__c ];
+    }
+
     @AuraEnabled
     public static Loan_Request__c saveLoanRequest(String customerName, Decimal loanAmount, String loanStatus, Date currentDate) {
         // Create a new instance of the Loan_Request__c object

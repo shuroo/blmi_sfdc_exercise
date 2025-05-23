@@ -1,21 +1,18 @@
 <template>
-    <lightning-card title="Loan Details">
-        <lightning-input label="Enter Loan Request ID" value={loanId} onchange={handleInputChange}></lightning-input>
-        <lightning-button label="Fetch Details" onclick={loadLoanDetails}></lightning-button>
-        
-        <template if:true={isLoading}>
-            <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
-        </template>
-        
-        <template if:false={isLoading}>
-            <template if:true={loanData}>
+    <lightning-card title="Loan Request Details">
+     <template if:true={loanData}>
+            <div class="slds-p-horizontal_small">
                 <p><strong>Customer Name:</strong> {loanData.Customer__c}</p>
                 <p><strong>Loan Amount:</strong> {loanData.LoanAmount__c}</p>
                 <p><strong>Loan Status:</strong> {loanData.LoanStatus__c}</p>
-            </template>
-            <template if:true={error}>
-                <p class="error">{error}</p>
-            </template>
+            </div>
         </template>
+
+        <template if:true={error}>
+            <p class="error">{error}</p>
+        </template>
+
+        <lightning-button label="Edit" onclick={handleEdit}></lightning-button>
+        <lightning-button label="Back" onclick={handleBack}></lightning-button>
     </lightning-card>
 </template>

@@ -1,4 +1,4 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, wire } from 'lwc';
 import getLoanDetails from '@salesforce/apex/LoanRequestController.getLoanDetails';
 
 export default class LoanDetailsD extends LightningElement {
@@ -7,21 +7,33 @@ export default class LoanDetailsD extends LightningElement {
     @track error; // To hold any errors
     @track isLoading = false; // To control the loading spinner
 
-    handleInputChange(event) {
-        this.loanId = event.target.value; // Capture the loan ID from input
+     @wire(getLoanDetails, { loanId: '$recordId' }) // Assuming you have a recordId property
+    wiredLoanRequest({ error, data }) {
+        if (data) {
+            this.loanData = data; // Assign the fetched data to loanData
+            this.error = undefined; // Clear any previous errors
+        } else if (error) {
+            this.error = error; // Assign the error to the error property
+            this.loanData = undefined; // Clear loanData on error
+        }
     }
 
-    loadLoanDetails() {
-        this.isLoading = true; // Show the spinner
-        this.error = null; // Clear previous errors
-        getLoanDetails({ loanId: this.loanId }) // Call the Apex method to get loan details
-            .then(result => {
-                this.loanData = result;
-                this.isLoading = false; // Hide the spinner after data is retrieved
-            })
-            .catch(error => {
-                this.error = error.body.message;
-                this.isLoading = false; // Hide the spinner
-            });
+    navigate(actionName){
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: this.loanId,
+                objectApiName: 'Loan_Request__c',
+                actionName: actionName
+            }
+        });
     }
+    handleEdit(){
+        this.navigate('edit');
+    }
+
+    handleBack(){
+        this.navigate('view');
+    }
+
 }
