@@ -1,12 +1,12 @@
 import { LightningElement, track, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
-import getLoanRequestDetails from '@salesforce/apex/LoanRequestController.getLoanDetails'; // Adjust based on your Apex method
+import getLoanRequestDetails from '@salesforce/apex/LoanRequestController.getLoanDetails';  
 
 export default class LoanDetailsShow extends NavigationMixin(LightningElement) {
-    @track loanData; // To hold loan details
-    @track error; // To hold any errors
+    @track loanData;  
+    @track error; 
 
-    @api recordId; // Record ID passed to this component
+    @api recordId;  
 
     connectedCallback() {
         this.fetchLoanRequestDetails();
@@ -24,11 +24,11 @@ export default class LoanDetailsShow extends NavigationMixin(LightningElement) {
     }
 
     handleBack() {
-        // Logic to navigate back to the previous page, e.g., using NavigationMixin
+        
         this[NavigationMixin.Navigate]({
             type: 'standard__app',
             attributes: {
-                appTarget: 'YourAppName' // Replace with your app name
+                 appTarget: 'BLeumi_Lightening_App_Page' 
             }
         });
     }

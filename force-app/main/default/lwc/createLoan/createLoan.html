@@ -1,5 +1,5 @@
 <template>
-   <div>
+   <div class="custom-card">
         <lightning-card title="Create Loan Request">
             <lightning-input label="Customer Name" value={customerName} onchange={handleInputChange} data-id="customerName"></lightning-input>
             <lightning-input label="Loan Amount" type="number" value={loanAmount} onchange={handleInputChange} data-id="loanAmount"></lightning-input>
@@ -14,20 +14,22 @@
                 placeholder="Select Loan Status">
             </lightning-combobox>
             
-            <lightning-button label="Save" onclick={saveLoanRequest}></lightning-button>
+            <lightning-button label="Save" onclick={handleSubmit}></lightning-button>
 
             <template if:true={isLoading}>
                 <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
             </template>
 
             <template if:true={loanData}>
+                 <div class="slds-p-horizontal_small"> 
                 <p><strong>Customer Name:</strong> {loanData.Customer__c}</p>
                 <p><strong>Loan Amount:</strong> {loanData.LoanAmount__c}</p>
                 <p><strong>Loan Status:</strong> {loanData.LoanStatus__c}</p>
+            </div>
             </template>
 
             <template if:true={error}>
-                <p class="error">{error}</p>
+                <p class="error-message">{error}</p>
             </template>
         </lightning-card>
     </div>

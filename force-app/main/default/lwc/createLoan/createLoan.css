@@ -1,0 +1,32 @@
+.custom-card {
+    background-color: #f4f6f9; /* Light gray background */
+    border: 1px solid #d8dde6; /* Border color */
+    padding: 10px; /* Padding */
+}
+
+.error-message {
+    color: rgb(132, 24, 24); /* Red color for error messages */
+    font-weight: bold; /* Bold text */
+    background-color: lightgrey;
+    padding: 1%;
+    text-align: center;
+    border: black 3px solid;;
+   
+}
+
+ .slds-p-horizontal_small {
+
+ }
+
+input {
+    width: 50%;
+}
+
+.slds-button_neutral{
+
+    border-radius: 5%;
+    background-color: #0070d2; /* Blue background */
+    border: none;
+    color: white;;
+
+}

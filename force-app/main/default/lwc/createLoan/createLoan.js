@@ -11,6 +11,19 @@ export default class CreateLoan extends NavigationMixin(LightningElement) {
     @track isLoading = false; // To control loading spinner
     @track recordId; // To hold the record ID of the created loan request
 
+    validateInputs() {
+        if (!this.customerName) {
+            this.error = 'Customer Name is required';
+            return false;
+        }
+        if (this.loanAmount <= 0) {
+            this.error = 'Loan Amount must be greater than zero';
+            return false;
+        }
+        this.error = null; // Clear any previous errors
+        return true;
+    }
+
     loanStatusOptions = [
         { label: 'Pending', value: 'Pending' },
         { label: 'Approved', value: 'Approved' },
@@ -41,6 +54,13 @@ export default class CreateLoan extends NavigationMixin(LightningElement) {
             this.loanStatus = event.target.value;
         }
     }
+
+    handleSubmit() {
+    if (this.validateInputs()) {
+        // Proceed with submission logic
+        this.saveLoanRequest();
+    }
+}
 
     saveLoanRequest() {
         this.isLoading = true; // Show the spinner
