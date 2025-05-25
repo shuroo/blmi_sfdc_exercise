@@ -1,18 +1,21 @@
 <template>
-    <lightning-card title="Loan Request Details">
-     <template if:true={loanData}>
-            <div class="slds-p-horizontal_small">
-                <p><strong>Customer Name:</strong> {loanData.Customer__c}</p>
-                <p><strong>Loan Amount:</strong> {loanData.LoanAmount__c}</p>
-                <p><strong>Loan Status:</strong> {loanData.LoanStatus__c}</p>
-            </div>
-        </template>
+    <div>
+        <lightning-card title="Loan Request Details ba ba ba">
+            <template if:true={loanData}>
+                <div class="slds-p-horizontal_small">
+                    <p><strong>Customer Name:</strong> {loanData.Customer__c}</p>
+                    <p><strong>Loan Amount:</strong> {loanData.LoanAmount__c}</p>
+                    <p><strong>Loan Status:</strong> {loanData.LoanStatus__c}</p>
+                </div>
+            </template>
 
-        <template if:true={error}>
-            <p class="error">{error}</p>
-        </template>
+            <template if:true={error}>
+                <p class="error">{error}</p>
+            </template>
 
-        <lightning-button label="Edit" onclick={handleEdit}></lightning-button>
-        <lightning-button label="Back" onclick={handleBack}></lightning-button>
-    </lightning-card>
+            <!-- Remove the Edit button since this is a view-only page -->
+            <!-- Add a Back button to navigate back to the app page -->
+            <lightning-button label="Back" onclick={handleBack}></lightning-button>
+        </lightning-card>
+    </div>
 </template>

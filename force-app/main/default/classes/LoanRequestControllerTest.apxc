@@ -84,11 +84,10 @@ public class LoanRequestControllerTest {
         // Test data
         String testCustomerName = 'New Customer';
         Decimal testLoanAmount = 3000;
-        String testLoanStatus = 'Pending';
-        Date currentDate = Date.today();
+        String testLoanStatus = 'Pending'; 
 
         // Test method
-        Loan_Request__c savedLoanRequest = LoanRequestController.saveLoanRequest(testCustomerName, testLoanAmount, testLoanStatus, currentDate);
+        Loan_Request__c savedLoanRequest = LoanRequestController.saveLoanRequest(testCustomerName, testLoanAmount, testLoanStatus);
         
         // Verify results
         System.assertNotEquals(null, savedLoanRequest, 'Loan request should be created.');

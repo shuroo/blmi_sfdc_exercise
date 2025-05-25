@@ -20,6 +20,7 @@
  */
 private class LoanRequestHelperTest {
 
+    
     /**
      * Setup method to create test data for the test class.
      * 
@@ -38,7 +39,11 @@ private class LoanRequestHelperTest {
             LoanStatus__c = 'Pending',
             Date__c = Date.today() 
         );
+        
         insert loanRequest;
+        
+        Loan_Request__c loanRequestFetched = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
+
     }
     
      /**
@@ -103,11 +108,17 @@ private class LoanRequestHelperTest {
         // Retrieve the test data
         Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
 
+        Loan_Request__c loanRequestClone = loanRequest.clone();
+            
+        Map<Id, Loan_Request__c> oldRequestsMap = new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequestClone};
+
         // Modify the loan amount to trigger task creation
         loanRequest.LoanAmount__c = 250001;
 
+        
+        System.assertNotEquals(0, oldRequestsMap.size());
         Test.startTest();
-        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequest});
+        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, oldRequestsMap);
         Test.stopTest();
 
         // Verify that a task was created
@@ -131,48 +142,85 @@ private class LoanRequestHelperTest {
         // Retrieve the test data
         Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c, LoanAmount__c, OwnerId FROM Loan_Request__c LIMIT 1];
 
+        Loan_Request__c loanRequestClone =  loanRequest.clone();
+                  
+        Map<Id, Loan_Request__c> oldRequestsMap = new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequestClone};
+
         // Modify the loan amount to trigger task creation
         loanRequest.LoanAmount__c = 24900;
 
+        
         Test.startTest();
-        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequest});
+        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, oldRequestsMap);
         Test.stopTest();
 
+        
         // Verify that a task was created
         List<Task> tasks = [SELECT Id, WhatId, OwnerId, Subject, Description FROM Task LIMIT 1];
         System.assertEquals(0, tasks.size(), 'A task should NOT be created for low loan amount.');
     }  
     /**
-     * Tests the creation of a report when a loan is rejected.
+     * On Update: Tests the creation of a report when a loan is rejected.
      * 
      * This test modifies the loan status of an existing Loan Request
      * and verifies that a report is created for the rejected loan.
      */
     @isTest
-    static void testRejectedLoanReportCreation() {
+    static void testRejectedLoanReportCreationOnUpdate() {
         // Retrieve the test data
-        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanAmount__c FROM Loan_Request__c LIMIT 1];
+        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c , LoanAmount__c FROM Loan_Request__c LIMIT 1];
+
+        Loan_Request__c loanRequestClone =  loanRequest.clone();
+                  
+        Map<Id, Loan_Request__c> oldRequestsMap = new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequestClone};
 
         // Modify the loan status to trigger report creation
         loanRequest.LoanStatus__c = 'Rejected'; 
 
         Test.startTest();
-        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequest});
+        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, oldRequestsMap);
         Test.stopTest();
 
         // Verify that a report was created
-        List<DeclinedLoanReport__c> reports = [SELECT Id, RejectionReason__c, Customer__c, LoanAmount__c, Date__c FROM DeclinedLoanReport__c WHERE Customer__c = :loanRequest.Customer__c];
-        System.assertEquals(1, reports.size(), 'A report should have been created for rejected loan.');
+        List<DeclinedLoanReport__c> reports = [SELECT Id, RejectionReason__c, Customer__c, LoanAmount__c, Date__c FROM DeclinedLoanReport__c WHERE Loan_Request__r.Id = :loanRequest.Id];
+        System.assertNotEquals(0, reports.size(), 'A report should have been created for rejected loan.');
+        System.assertEquals('Insufficient Credit', reports[0].RejectionReason__c, 'The report should contain the correct rejection reason.');
+        System.assertEquals(loanRequest.LoanAmount__c, reports[0].LoanAmount__c, 'The report should contain the correct loan amount.');
+        System.assertEquals(Date.today(), reports[0].Date__c, 'The report should contain the current date.');
+    }
+    
+    /**
+     * On Insert: Tests the creation of a report when a loan is rejected.
+     * 
+     * This test modifies the loan status of an existing Loan Request
+     * and verifies that a report is created for the rejected loan.
+     */
+    @isTest
+    static void testRejectedLoanReportCreationOnInsert() {
+        // Retrieve the test data
+        Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanStatus__c , LoanAmount__c FROM Loan_Request__c LIMIT 1];
+
+        // Modify the loan status to trigger report creation
+        loanRequest.LoanStatus__c = 'Rejected'; 
+
+        Test.startTest();
+        LoanRequestHelper.handleLoanInserts(new List<Loan_Request__c>{loanRequest});
+        Test.stopTest();
+
+        // Verify that a report was created
+        List<DeclinedLoanReport__c> reports = [SELECT Id, RejectionReason__c, Customer__c, LoanAmount__c, Date__c FROM DeclinedLoanReport__c WHERE Loan_Request__r.Id = :loanRequest.Id];
+        System.assertNotEquals(0, reports.size(), 'A report should have been created for rejected loan.');
         System.assertEquals('Insufficient Credit', reports[0].RejectionReason__c, 'The report should contain the correct rejection reason.');
         System.assertEquals(loanRequest.LoanAmount__c, reports[0].LoanAmount__c, 'The report should contain the correct loan amount.');
         System.assertEquals(Date.today(), reports[0].Date__c, 'The report should contain the current date.');
     }
     
     
+    
 
     @isTest
     /**
-    * Tests the creation of a loan history record when a loan request is approved.
+    * On Update:Test the creation of a loan history record when a loan request is approved.
     * 
     * This test method retrieves an existing Loan Request record, modifies
     * its status to 'Approved', and verifies that a corresponding history
@@ -182,16 +230,20 @@ private class LoanRequestHelperTest {
     * - Cloning the original loan request to maintain its state before the update.
     * - Asserting that a history record was created with the correct customer and loan amount.
     */
-    static void testLoanHistoryCreation() {
+    static void testLoanHistoryCreationOnUpdate() {
         // Retrieve the test data
         Loan_Request__c loanRequest = [SELECT Id, Customer__c, LoanAmount__c, LoanStatus__c FROM Loan_Request__c LIMIT 1];
         Loan_Request__c oldLoanRequest = loanRequest.clone(false, false, false, false);
+
+        Loan_Request__c loanRequestClone =  loanRequest.clone();
+                  
+        Map<Id, Loan_Request__c> oldRequestsMap = new Map<Id, Loan_Request__c>{loanRequest.Id => loanRequestClone};
 
         // Modify the loan status to trigger history creation
         loanRequest.LoanStatus__c = 'Approved';
 
         Test.startTest();
-        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, new Map<Id, Loan_Request__c>{loanRequest.Id => oldLoanRequest});
+        LoanRequestHelper.handleLoanUpdates(new List<Loan_Request__c>{loanRequest}, oldRequestsMap);
         Test.stopTest();
 
         // Verify that a history record was created
@@ -202,5 +254,7 @@ private class LoanRequestHelperTest {
         System.assertEquals(loanRequest.Customer__c, histories[0].Customer__c, 'The history record should contain the correct customer.');
         System.assertEquals(loanRequest.LoanAmount__c, histories[0].LoanAmount__c, 'The history record should contain the correct loan amount.');
     }
+    
+    
 
 }

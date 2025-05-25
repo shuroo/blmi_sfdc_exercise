@@ -6,8 +6,8 @@ public class LoanRequestHelper {
 
         for (Loan_Request__c loanRequest : loanRequests) {
             // Handle high loan amount tasks
-            if (loanRequest.LoanAmount__c > 250000) {
-                Task newTask = new Task(
+            if (loanRequest.LoanAmount__c > 250000 && oldLoanRequestsMap.get(loanRequest.Id).LoanAmount__c < 250000) {
+               Task newTask = new Task(
                     WhatId = loanRequest.Id,
                     OwnerId = loanRequest.OwnerId,
                     Subject = 'High Loan Amount Review',
@@ -17,16 +17,12 @@ public class LoanRequestHelper {
                 );
                 tasksToInsert.add(newTask);
             } 
+            
+           
             // Handle rejected loans
-            else if (loanRequest.LoanStatus__c == 'Rejected') {
-                DeclinedLoanReport__c report = new DeclinedLoanReport__c(
-                   // Loan_Request__c = loanRequest.Id,
-                    RejectionReason__c = 'Insufficient Credit',
-                    Customer__c = loanRequest.Customer__c,
-                    LoanAmount__c = loanRequest.LoanAmount__c,
-                    Date__c = Date.today()
-                );
-                reportsToInsert.add(report);
+            else if (loanRequest.LoanStatus__c == 'Rejected' && oldLoanRequestsMap.get(loanRequest.Id).LoanStatus__c != 'Rejected') {
+                createDeclinedReport(loanRequest,reportsToInsert);
+                
             }
             // Check if LoanStatus changed to 'Approved'
             if (loanRequest.LoanStatus__c == 'Approved' && 
@@ -53,15 +49,26 @@ public class LoanRequestHelper {
         } 
     }
     
+    public static void createDeclinedReport(Loan_Request__c loanRequest,List<DeclinedLoanReport__c> reportsToInsert) {
+        DeclinedLoanReport__c report = new DeclinedLoanReport__c(
+                    Loan_Request__c = loanRequest.Id,
+                    RejectionReason__c = 'Insufficient Credit',
+                    Customer__c = loanRequest.Customer__c,
+                    LoanAmount__c = loanRequest.LoanAmount__c,
+                    Date__c = Date.today()
+                );
+                reportsToInsert.add(report);
+    }
+    
     
     /**
-     * Optionally adds tasks for high loan amounts.
+     * Optionally adds tasks for high loan amounts, or DeclinedLoanReport for rejected loan
      *
      * @param loanRequests The list of loan requests to evaluate for high loan amounts.
      */
-    public static void optionallyAddTasksHighLoans(List<Loan_Request__c> loanRequests) {
-        List<Task> tasksToInsert = new List<Task>(); 
-
+    public static void optionallyAddTasksOrReport(List<Loan_Request__c> loanRequests) {
+        List<Task> tasksToInsert = new List<Task>();
+        List<DeclinedLoanReport__c> reportsToInsert = new List<DeclinedLoanReport__c>();
         for (Loan_Request__c loanRequest : loanRequests) {
             // Handle high loan amount tasks
             if (loanRequest.LoanAmount__c > 250000) {
@@ -75,19 +82,25 @@ public class LoanRequestHelper {
                 );
                 tasksToInsert.add(newTask);
             } 
+            else if (loanRequest.LoanStatus__c == 'Rejected') { 
+                  createDeclinedReport(loanRequest,reportsToInsert);
+            }
         }
         
         if (!tasksToInsert.isEmpty()) {
             insert tasksToInsert;
         }
+        if (!reportsToInsert.isEmpty()) {
+            insert reportsToInsert;
+        }
     }
-
+  
     /**
      * Handles loan inserts by calling methods to add tasks for high loans.
      *
      * @param loanRequests The list of loan requests being inserted.
      */
     public static void handleLoanInserts(List<Loan_Request__c> loanRequests) {
-        optionallyAddTasksHighLoans(loanRequests);
+        optionallyAddTasksOrReport(loanRequests);
     }
 }

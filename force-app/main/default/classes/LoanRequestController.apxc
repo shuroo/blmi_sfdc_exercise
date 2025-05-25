@@ -36,7 +36,7 @@ public with sharing class LoanRequestController {
     }
 
     @AuraEnabled
-    public static Loan_Request__c saveLoanRequest(String customerName, Decimal loanAmount, String loanStatus, Date currentDate) {
+    public static Loan_Request__c saveLoanRequest(String customerName, Decimal loanAmount, String loanStatus) {
         // Create a new instance of the Loan_Request__c object
         Loan_Request__c newLoanRequest = new Loan_Request__c();
         
@@ -61,10 +61,10 @@ public with sharing class LoanRequestController {
         newLoanRequest.Customer__c = customer.Id;  
         newLoanRequest.LoanAmount__c = loanAmount;  
         newLoanRequest.LoanStatus__c = loanStatus; 
-        newLoanRequest.Date__c =  currentDate;
+        newLoanRequest.Date__c =  Date.today();
           
         insert newLoanRequest;
          
-        return newLoanRequest;
+        return newLoanRequest.Id;
     }
 }

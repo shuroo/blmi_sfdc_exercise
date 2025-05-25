@@ -1,39 +1,35 @@
-import { LightningElement, track, wire } from 'lwc';
-import getLoanDetails from '@salesforce/apex/LoanRequestController.getLoanDetails';
+import { LightningElement, track, api } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+import getLoanRequestDetails from '@salesforce/apex/LoanRequestController.getLoanDetails'; // Adjust based on your Apex method
 
-export default class LoanDetailsD extends LightningElement {
-    @track loanId = ''; // To hold the input loan ID
-    @track loanData; // To hold the loan details
+export default class LoanDetailsShow extends NavigationMixin(LightningElement) {
+    @track loanData; // To hold loan details
     @track error; // To hold any errors
-    @track isLoading = false; // To control the loading spinner
 
-     @wire(getLoanDetails, { loanId: '$recordId' }) // Assuming you have a recordId property
-    wiredLoanRequest({ error, data }) {
-        if (data) {
-            this.loanData = data; // Assign the fetched data to loanData
-            this.error = undefined; // Clear any previous errors
-        } else if (error) {
-            this.error = error; // Assign the error to the error property
-            this.loanData = undefined; // Clear loanData on error
-        }
+    @api recordId; // Record ID passed to this component
+
+    connectedCallback() {
+        this.fetchLoanRequestDetails();
     }
 
-    navigate(actionName){
+    fetchLoanRequestDetails() {
+        getLoanRequestDetails({ loanId: this.recordId })
+            .then(result => {
+                this.loanData = result; // Assign the fetched data to loanData
+                this.error = undefined; // Clear any previous errors
+            })
+            .catch(error => {
+                this.error = error.body.message; // Capture any errors
+            });
+    }
+
+    handleBack() {
+        // Logic to navigate back to the previous page, e.g., using NavigationMixin
         this[NavigationMixin.Navigate]({
-            type: 'standard__recordPage',
+            type: 'standard__app',
             attributes: {
-                recordId: this.loanId,
-                objectApiName: 'Loan_Request__c',
-                actionName: actionName
+                appTarget: 'YourAppName' // Replace with your app name
             }
         });
     }
-    handleEdit(){
-        this.navigate('edit');
-    }
-
-    handleBack(){
-        this.navigate('view');
-    }
-
 }

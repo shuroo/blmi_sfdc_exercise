@@ -1,13 +1,12 @@
 import { LightningElement, track } from 'lwc';
 import saveLoanRequest from '@salesforce/apex/LoanRequestController.saveLoanRequest'; // Apex method to save loan request
-
 import { NavigationMixin } from 'lightning/navigation';
 
 export default class CreateLoan extends NavigationMixin(LightningElement) {
     @track customerName = '';
     @track loanAmount;
     @track loanStatus = '';
-    @track loanData; // To hold loan details
+    @track loanData; // To hold loan details 
     @track error; // To hold any errors
     @track isLoading = false; // To control loading spinner
     @track recordId; // To hold the record ID of the created loan request
@@ -17,6 +16,20 @@ export default class CreateLoan extends NavigationMixin(LightningElement) {
         { label: 'Approved', value: 'Approved' },
         { label: 'Rejected', value: 'Rejected' }
     ];
+
+   navigateToRecord(recordId) {
+
+        console.log('Nagivate to view record of id:' + recordId); 
+
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: recordId, // Replace with your actual record ID
+                objectApiName: 'Loan_Request__c', // The object API name
+                actionName: 'view' // Specify action as 'view'
+            }
+        });
+    }
 
     handleInputChange(event) {
         const field = event.target.dataset.id;
@@ -38,23 +51,22 @@ export default class CreateLoan extends NavigationMixin(LightningElement) {
             loanAmount: this.loanAmount, 
             loanStatus: this.loanStatus 
         })
-        .then(result => {
+        .then(result => { 
+            var recordId = result.Id; // Capture the ID of the created loan request
+            console.log('resultId- --- :'+ recordId);
+               
             this.loanData = result; // Assuming the Apex method returns the created loan record
             this.isLoading = false; // Hide the spinner
-            this.recordId = result.Id; // Capture the record ID of the created loan request
-            this.navigateToRecord(result); // Navigate to the created record
+            this.recordId = recordId; // Capture the record ID of the created loan request
+            console.log('Loan Request Created with ID: ' + this.recordId);
+
+             this.navigateToRecord(recordId); 
+
         })
-        .catch(error => {
-            this.error = error.body.message; // Capture any errors
+        .catch(error => {   
+            this.error = JSON.stringify(error); // Capture any errors
             this.isLoading = false; // Hide the spinner
+            alert('Loan Request failed with error: ' + this.error);
         });
-        this[NavigationMixin.Navigate]({
-            type: 'standard__recordPage',
-            attributes: {
-                recordId:  this.recordId, // The ID of the saved record
-                objectApiName: 'Loan_Request__c', // Specify the object API name
-                actionName: 'view' // Specify action to view the record
-            }
-        });
-    }
-}
+    };
+}     
