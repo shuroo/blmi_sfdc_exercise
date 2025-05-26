@@ -26,10 +26,10 @@ export default class LoanDetailsShow extends NavigationMixin(LightningElement) {
     handleBack() {
         
         this[NavigationMixin.Navigate]({
-            type: 'standard__app',
+             type: 'standard__webPage',
             attributes: {
-                 appTarget: 'BLeumi_Lightening_App_Page' 
-            }
-        });
+                url: '/lightning/n/BLeumi_Lightening_App_Page' 
+                
+        }});
     }
 }

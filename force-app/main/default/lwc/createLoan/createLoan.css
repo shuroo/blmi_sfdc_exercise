@@ -13,20 +13,4 @@
     border: black 3px solid;;
    
 }
-
- .slds-p-horizontal_small {
-
- }
-
-input {
-    width: 50%;
-}
-
-.slds-button_neutral{
-
-    border-radius: 5%;
-    background-color: #0070d2; /* Blue background */
-    border: none;
-    color: white;;
-
-}
+ 

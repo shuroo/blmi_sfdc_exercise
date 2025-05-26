@@ -7,15 +7,7 @@ public class LoanRequestHelper {
         for (Loan_Request__c loanRequest : loanRequests) {
             // Handle high loan amount tasks
             if (loanRequest.LoanAmount__c > 250000 && oldLoanRequestsMap.get(loanRequest.Id).LoanAmount__c < 250000) {
-               Task newTask = new Task(
-                    WhatId = loanRequest.Id,
-                    OwnerId = loanRequest.OwnerId,
-                    Subject = 'High Loan Amount Review',
-                    Description = 'Customer: ' + loanRequest.Customer__c + 
-                                  ', Amount: ' + loanRequest.LoanAmount__c + 
-                                  ', Date: ' + Date.today()
-                );
-                tasksToInsert.add(newTask);
+              createTask(loanRequest,tasksToInsert);
             } 
             
            
@@ -59,6 +51,18 @@ public class LoanRequestHelper {
                 );
                 reportsToInsert.add(report);
     }
+
+        public static void createTask(Loan_Request__c loanRequest,List<Task> tasksToInsert) {
+        Task newTask = new Task(
+                    WhatId = loanRequest.Id,
+                    OwnerId = loanRequest.OwnerId,
+                    Subject = 'High Loan Amount Review',
+                    Description = 'Customer: ' + loanRequest.Customer__c + 
+                                  ', Amount: ' + loanRequest.LoanAmount__c + 
+                                  ', Date: ' + Date.today()
+                );
+                tasksToInsert.add(newTask);
+    }
     
     
     /**
@@ -72,15 +76,7 @@ public class LoanRequestHelper {
         for (Loan_Request__c loanRequest : loanRequests) {
             // Handle high loan amount tasks
             if (loanRequest.LoanAmount__c > 250000) {
-                Task newTask = new Task(
-                    WhatId = loanRequest.Id,
-                    OwnerId = loanRequest.OwnerId,
-                    Subject = 'High Loan Amount Review',
-                    Description = 'Customer: ' + loanRequest.Customer__c + 
-                                  ', Amount: ' + loanRequest.LoanAmount__c + 
-                                  ', Date: ' + Date.today()
-                );
-                tasksToInsert.add(newTask);
+                createTask(loanRequest,tasksToInsert);
             } 
             else if (loanRequest.LoanStatus__c == 'Rejected') { 
                   createDeclinedReport(loanRequest,reportsToInsert);
